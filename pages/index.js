@@ -1,5 +1,8 @@
 import React, { useRef, useState } from 'react';
 import RecipeSearchItem from '../src/components/RecipeSearchItem';
+import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton';
+import Image from 'next/image';
+import styles from "../styles/main.module.css"
 
 export default function index() {
 
@@ -7,11 +10,13 @@ export default function index() {
   const [loading, setLoading] = useState(false)
   const [recipes, setRecipes] = useState(undefined)
   const [error, setError] = useState("")
+  const [info, setInfo] = useState(undefined)
 
   const handleSubmit = (e) => {
     e.preventDefault()
 
     setLoading(true)
+    setRecipes(undefined)
     setError("")
     try {
       const ingredients = searchRef.current.value.split(" ")
@@ -34,42 +39,96 @@ export default function index() {
       .then(data => {
         if(data.length !== 0) {
           setRecipes(data)
+          const ids = data.map((recipe) => recipe.id)
+          const getInfoUrl = "https://api.spoonacular.com/recipes/informationBulk?" + new URLSearchParams({
+            ids: ids,
+            apiKey: process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY
+          })
+          fetch(getInfoUrl) // Get info for recipes
+            .then(res => res.json())
+            .then(data => {
+              if(data.length !== 0) {
+                setInfo(data)
+              } else {
+                setError("No recipes found. Have you correctly inputted your ingredients?")
+              }
+            })
         } else {
           setError("No recipes found. Have you correctly inputted your ingredients?")
         }
       })
-      .catch(() => setError("An error () has occured while trying to search for recipes."))
-    setLoading(false)
+      .catch(() =>
+        setError("An error has occured while trying to search for recipes.") 
+      )
+      .finally(() => setLoading(false))
   }
 
-  console.log(recipes)
+  const Skeleton = () => {
+    let content = []
+    let i = 0
+    while(i<10) {
+      content.push(<RecipeSearchItemSkeleton />)
+      i += 1
+    }
+    return content
+  }
 
   return (
-    <main className='m-8'>
-      <div className='w-max mx-auto'>
-        <h1 className='text-3xl my-16'>Recipe recommendations based on what&apos;s in your fridge</h1>
+    <main className='pb-8 min-h-screen'>
+      <div className={`py-16 ${styles.parallax}`}>
+        <div className='bg-white rounded-xl flex flex-row justify-between items-center h-[400px] max-w-6xl mx-auto drop-shadow-md'>
+          <div className='w-max mx-auto'>
+            {error && 
+              <p className='px-4 py-2 absolute top-5 bg-red-500 text-white rounded-xl'>{error}</p>
+            }
+            <h1 className='text-4xl font-medium mb-2'>What&apos;s in your fridge?</h1>
+            <p className='text-textlight mb-6'>Search through 500K+ recipes and get recommendations <br /> directly based on the ingredients in your fridge.</p>
 
-        <form onSubmit={handleSubmit} className="w-max mx-auto">
+            <form onSubmit={handleSubmit}>
+              <input type="text" ref={searchRef} required className='w-96 px-6 py-3 rounded-l-xl text-black bg-bglighter' placeholder='steak potatoes onion' />
+              <button type="submit" disabled={loading} className={`bg-accent px-6 py-3 rounded-r-xl text-white hover:text-accent  hover:bg-white duration-75 ease ${styles.innerShadow}`}>Search recipes</button>
+            </form>
 
-          <h2 className='text-xl mb-4'>What do you have?</h2>
-          <p className='text-gray-500'>Please separate items with a space.</p>
-          <p className='text-gray-500 mb-4'>eg. I have eggs and milk. Appropriate search input: Eggs milk</p>
+            <button className='underline text-accent mb-4 mt-1'>Advanced search</button>
 
-          <input type="text" ref={searchRef} required className='w-96 px-4 py-2 rounded-l-xl text-black' />
-          <button type="submit" className='bg-blue-700 px-4 py-2 rounded-r-xl'>Search recipes</button>
-        </form>
-      </div>
-
-      {error && <p>{error}</p>}
-
-      <div className='mt-16'>
-        {recipes && recipes.map((recipe) => 
-          <RecipeSearchItem
-            key={recipe.id}
-            recipe={recipe}
+            <p className='text-textlighter text-sm'>Please separate items with a space.</p>
+            <p className='text-textlighter text-sm'>eg. I have eggs and milk. Appropriate search input: Eggs milk</p>
+          </div>
+          
+          <Image 
+            src="/vegetables.png"
+            alt="vegetables"
+            width={400}
+            height={200}
+            className='object-cover'
           />
-        )}
+        </div>
       </div>
+
+      {loading ?
+
+      <div className='max-w-6xl mx-auto'>
+        <h1 className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
+        <div className='flex flex-col divide-y-2'>
+          <Skeleton />
+        </div>
+      </div>
+
+      :
+
+      recipes && info &&
+      <div className='max-w-6xl mx-auto'>
+        <h1 className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
+        <div className='flex flex-col divide-y-2'>
+          {recipes.map((recipe) =>
+            <RecipeSearchItem
+              key={recipe.id}
+              recipe={recipe}
+              info={info.find((e) => e.id == recipe.id)}
+            />
+          )}
+        </div>
+      </div>}
 
     </main>
   )

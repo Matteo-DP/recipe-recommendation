@@ -4,7 +4,11 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        bglight: "#1E1E1E"
+        accent: "#4833CE",
+        textlight: "#1E1E1E",
+        textlighter: "#575757",
+        bglight: "#D9D9D9",
+        bglighter: "#E3E3E3"
       }
     },
   },
