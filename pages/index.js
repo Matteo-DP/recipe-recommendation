@@ -123,7 +123,7 @@ export default function index() {
               <button type="submit" disabled={loading} className={`bg-accent px-6 py-3 rounded-r-xl text-white hover:text-accent  hover:bg-white duration-75 ease ${styles.innerShadow}`}>Search recipes</button>
             </form>
 
-            <button className='underline text-accent mb-4 mt-1' onClick={() => setIsOpen(true)}>Advanced search</button>
+            <button className='underline text-accent mb-4 mt-1' onClick={() => setIsOpen(true)}>Advanced search options</button>
 
             <p className='text-textlighter text-sm'>Please separate items with a space.</p>
             <p className='text-textlighter text-sm'>eg. I have eggs and milk. Appropriate search input: Eggs milk</p>
