@@ -3,10 +3,12 @@ import RecipeSearchItem from '../src/components/RecipeSearchItem';
 import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton';
 import Image from 'next/image';
 import styles from "../styles/main.module.css"
+import SettingsMenu from '../src/components/SettingsMenu';
 
 export default function index() {
 
-  const searchRef = useRef(undefined);
+  const [searchSettings, setSearchSettings] = useState(undefined)
+  const searchRef = useRef(undefined)
   const [loading, setLoading] = useState(false)
   const [recipes, setRecipes] = useState(undefined)
   const [error, setError] = useState("")
@@ -30,9 +32,9 @@ export default function index() {
     // https://spoonacular.com/food-api/docs#Search-Recipes-by-Ingredients
     const url = "https://api.spoonacular.com/recipes/findByIngredients?" + new URLSearchParams({
       ingredients: searchRef.current.value,
-      ignorePantry: true,
+      ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
       number: 10,
-      ranking: 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
+      ranking: searchSettings?.ranking?.prioRanking1 && 1 || searchSettings?.ranking?.prioRanking2 && 2 || 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
       apiKey: process.env.NEXT_PUBLIC_SPOONACULAR_API_KEY
     })
     fetch(url)
@@ -55,6 +57,7 @@ export default function index() {
                 setError("No recipes found. Have you correctly inputted your ingredients?")
               }
             })
+            .finally(() => setLoading(false))
         } else {
           setError("No recipes found. Have you correctly inputted your ingredients?")
         }
@@ -62,14 +65,13 @@ export default function index() {
       .catch(() =>
         setError("An error has occured while trying to search for recipes.") 
       )
-      .finally(() => setLoading(false))
   }
 
   const Skeleton = () => {
     let content = []
     let i = 0
     while(i<10) {
-      content.push(<RecipeSearchItemSkeleton />)
+      content.push(<RecipeSearchItemSkeleton key={i} />)
       i += 1
     }
     return content
@@ -78,36 +80,11 @@ export default function index() {
   return (
     <main className='pb-8 min-h-screen'>
 
-      {isOpen &&
-        <>
-          <div className='fixed w-screen h-screen bg-black opacity-75 z-[9998]'
-            onClick={() => setIsOpen(false)}
-          ></div>
-          <div className='fixed w-[60vw] h-[40vw] ml-auto mr-auto left-0 right-0 top-[50%] translate-y-[-50%] bg-white z-[9999] border border-black shadow-inner rounded-xl p-6'>
-            <button onClick={() => setIsOpen(false)} className="fixed top-0 right-0 p-8">
-              <i className="fa-solid fa-xmark fa-2xl"></i>
-            </button>
-            <h1 className='text-2xl mb-6 text-accent'>Advanced search options</h1>
-            <form>
-              <p className='text-xl mb-1 text-textlighter'>Search engine</p>
-              <input defaultChecked type="radio" id="spoonacularApi" value="spoonacularApi" />
-              <label htmlFor="spoonacularApi">SpoonacularApi</label> <br />
-
-              <p className='text-xl mt-6 mb-4 text-accent'>Preferences</p>
-
-              <p className='text-lg mb-1 text-textlighter'>Ingredient prioritization</p>
-              <input defaultChecked type="radio" id="ranking1" value="ranking1" />
-              <label htmlFor="ranking1">Maximize used ingredients</label> <br />
-              <input type="radio" id="ranking2" value="ranking2" />
-              <label htmlFor="ranking2">Minimize missing ingredients</label> <br />
-
-              <p className='text-lg mt-4 mb-1 text-textlighter'>Pantry items</p>
-              <input defaultChecked type="checkbox" id="ignorePantry" value="ignorePantry" />
-              <label htmlFor="ignorePantry">Ignore typical pantry items, such as water, salt, flour, etc.</label>
-            </form>
-          </div>
-        </>
-      }
+      <SettingsMenu 
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        setSearchSettings={setSearchSettings}
+      />
 
       <div className={`py-16 ${styles.parallax}`}>
         <div className='bg-white rounded-xl flex flex-row justify-between items-center h-[400px] max-w-6xl mx-auto drop-shadow-md'>

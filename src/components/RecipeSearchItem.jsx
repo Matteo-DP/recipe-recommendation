@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import styles from "../../styles/main.module.css"
 
 export default function RecipeSearchItem({ recipe, info }) {
 
@@ -51,11 +52,11 @@ export default function RecipeSearchItem({ recipe, info }) {
                         <p className='inline'>{info.readyInMinutes} mins</p>
                     </div>
                     <div className='mt-4'>
-                        <a className='bg-accent text-white text-lg px-12 py-2 rounded-2xl hover:text-black ease-in-out duration-75'
-                            href={recipe.sourceUrl}
+                        <a className={`bg-accent text-white px-12 py-2 rounded-2xl hover:text-accent hover:bg-white ease-in-out duration-75 ${styles.innerShadow}`}
+                            href={info?.sourceUrl || "/notfound"} target="_blank" rel="noreferrer"
                         >
                             View recipe
-                            <i class="fa-solid fa-arrow-up-right-from-square ml-2 fa-sm"></i>
+                            <i className="fa-solid fa-arrow-up-right-from-square ml-2 fa-sm"></i>
                         </a>
                     </div>
                 </div>

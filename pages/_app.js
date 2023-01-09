@@ -3,6 +3,7 @@ import Footer from '../src/components/Footer'
 import Header from '../src/components/Header'
 import '../styles/globals.css'
 import Head from 'next/head'
+import { AuthProvider } from '../src/contexts/AuthContext'
 
 function MyApp({ Component, pageProps }) {
   return( 
@@ -15,9 +16,11 @@ function MyApp({ Component, pageProps }) {
         <title>What&apos;s in your fridge?</title>
       </Head>
       <Script src='https://kit.fontawesome.com/2ad3ea3c29.js' crossOrigin='anonymous'></Script>
-      <Header />
-      <Component {...pageProps} />
-      <Footer />
+      <AuthProvider>
+        <Header />
+        <Component {...pageProps} />
+        <Footer />
+      </AuthProvider>
     </>
   )
 }
