@@ -4,7 +4,7 @@ import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton
 import Image from 'next/image';
 import styles from "../styles/main.module.css"
 import SettingsMenu from '../src/components/SettingsMenu';
-import getApiKey from '../src/services/ApiKeyService';
+import getApiKey from '../src/services/apiKeyService';
 
 export default function Index() {
 
