@@ -5,7 +5,7 @@ import styles from "../../styles/main.module.css"
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'next/router';
 
-export default function login() {
+export default function Login() {
 
     const emailRef = useRef()
     const passwordRef = useRef()

@@ -6,7 +6,7 @@ import styles from "../styles/main.module.css"
 import SettingsMenu from '../src/components/SettingsMenu';
 import getApiKey from '../src/services/ApiKeyService';
 
-export default function index() {
+export default function Index() {
 
   const [searchSettings, setSearchSettings] = useState(undefined)
   const searchRef = useRef(undefined)

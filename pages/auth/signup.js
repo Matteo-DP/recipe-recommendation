@@ -5,7 +5,7 @@ import styles from "../../styles/main.module.css"
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'next/router';
 
-export default function signup() {
+export default function Signup() {
 
     const [error, setError] = useState("")
     const [loading, setLoading] = useState(false)
