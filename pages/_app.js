@@ -1,7 +1,8 @@
+import 'bootstrap/dist/css/bootstrap.css'
+import '../styles/globals.css'
 import Script from 'next/script'
 import Footer from '../src/components/Footer'
 import Header from '../src/components/Header'
-import '../styles/globals.css'
 import Head from 'next/head'
 import { AuthProvider } from '../src/contexts/AuthContext'
 
