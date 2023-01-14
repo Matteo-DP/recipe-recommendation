@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import Image from 'next/image'
 import styles from "../../styles/main.module.css"
 
-export default function RecipeSearchItem({ recipe, info }) {
+export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, refreshRecipes }) {
+
+    const [loading, setLoading] = useState(false)
+    const [visuallySaved, setVisuallySaved] = useState(saved)
 
     const tags = {
         dairyFree: "Dairy free",
@@ -12,10 +15,34 @@ export default function RecipeSearchItem({ recipe, info }) {
         vegan: "Vegan",
         vegetarian: "Vegetarian",
         veryHealthy: "Heatlhy"
+    };
+
+    const handleSave = () => {
+        setLoading(true);
+        setVisuallySaved(!visuallySaved);
+        fetch("/api/savedRecipes",
+        {
+            method: saved ? "DELETE" : "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                uuid: uuid,
+                recipeId: recipe.id
+            })
+        })
+            .then(data => data.json())
+            .then(res => {
+                if(res?.code == 200) {
+                    setPopup(`Recipe '${recipe.title}' ${saved ? "deleted" : "saved"}`)
+                    refreshRecipes()
+                } else {
+                    setPopup(`Failed to ${saved ? "delete" : "save"} recipe`)
+                }
+            })
+            .finally(() => setLoading(false));
     }
  
     return (
-        <div className='flex flex-col sm:flex-row gap-4 py-10'>
+        <li className='flex flex-col sm:flex-row gap-4 py-10'>
             <Image alt={recipe.title} src={recipe.image} width={300} height={300} className="rounded-xl sm:rounded-l-xl sm:rounded-r-none object-cover mx-auto sm:m-0" />
             <div className='flex flex-col justify-around'>
                 <div>
@@ -34,7 +61,7 @@ export default function RecipeSearchItem({ recipe, info }) {
                         <p className='text-sm sm:text-base inline'>Missing ingredients:</p>
                         <p className='text-base sm:text-lg inline text-red-600 ml-2'>{
                             // Make sure comma doesnt get added on the last element
-                            recipe.missedIngredients.map((ingredient, index) => ingredient.name + (index !== recipe.missedIngredients.length - 1 ? ", " : ""))
+                            recipe.missedIngredients.map((ingredient, index) => ingredient.name.toLowerCase() + (index !== recipe.missedIngredients.length - 1 ? ", " : ""))
                         }</p>
                     </>
                     :
@@ -50,6 +77,15 @@ export default function RecipeSearchItem({ recipe, info }) {
                             View recipe
                             <i className="fa-solid fa-arrow-up-right-from-square ml-2 fa-sm"></i>
                         </a>
+                        {uuid && 
+                            <button onClick={() => handleSave()} disabled={loading} className="text-blue-700">
+                                {visuallySaved ?
+                                    <i class="fa-solid fa-bookmark fa-2xl ml-4"></i>
+                                    :
+                                    <i class="fa-regular fa-bookmark fa-2xl ml-4"></i>
+                                }
+                            </button>
+                        }
                     </div>
                     <div>
                         <div className='inline-block mr-4 mt-6'>
@@ -63,6 +99,6 @@ export default function RecipeSearchItem({ recipe, info }) {
                     </div>
                 </div>
             </div>
-        </div>
+        </li>
     )
 }

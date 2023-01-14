@@ -5,9 +5,11 @@ import Image from 'next/image';
 import styles from "../styles/main.module.css"
 import SettingsMenu from '../src/components/SettingsMenu';
 import getApiKey from '../src/services/apiKeyService';
+import { useAuth } from "../src/contexts/AuthContext"
 
 export default function Index() {
 
+  const [popup, setPopup] = useState("");
   const [searchSettings, setSearchSettings] = useState(undefined)
   const searchRef = useRef(undefined)
   const [loading, setLoading] = useState(false)
@@ -15,6 +17,18 @@ export default function Index() {
   const [error, setError] = useState("")
   const [info, setInfo] = useState(undefined)
   const [isOpen, setIsOpen] = useState(false)
+  const [savedRecipes, setSavedRecipes] = useState(undefined)
+
+  const { currentUser } = useAuth();
+
+  const fetchSavedRecipes = async () => {
+    if(!currentUser) return
+    fetch("/api/savedRecipes?" + new URLSearchParams({
+      uuid: currentUser.uid
+    }))
+      .then(res => res.json())
+      .then(data => data.code == 200 && setSavedRecipes(data.recipeIds))
+  }
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -54,7 +68,9 @@ export default function Index() {
                 setLoading(false)
               }
             })
-            .finally(() => setLoading(false))
+            .then(() => fetchSavedRecipes()
+                .then(() => setLoading(false))
+            )
         } else {
           setError("No recipes found. Have you correctly inputted your ingredients?")
           setLoading(false)
@@ -75,6 +91,8 @@ export default function Index() {
     }
     return content
   }
+
+  console.log(popup)
 
   return (
     <main className='pb-8 min-h-screen'>
@@ -102,6 +120,7 @@ export default function Index() {
 
           <p className='text-textlighter text-sm'>Please separate items with a space.</p>
           <p className='text-textlighter text-sm'>eg. I have eggs and milk. Appropriate search input: Eggs milk</p>
+          <p className='text-textlighter text-sm'>For optimal results, be as specific as possible</p>
           
           <Image 
             src="/vegetables.png"
@@ -127,15 +146,19 @@ export default function Index() {
       recipes && info &&
       <div className='max-w-6xl mx-auto p-2'>
         <h1 className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
-        <div className='flex flex-col divide-y-2'>
+        <ul className='flex flex-col divide-y-2'>
           {recipes.map((recipe) =>
             <RecipeSearchItem
               key={recipe.id}
               recipe={recipe}
               info={info.find((e) => e.id == recipe.id)}
+              uuid={currentUser?.uid}
+              setPopup={setPopup}
+              saved={savedRecipes ? savedRecipes.find(e => e == recipe.id) ? true : false : false}
+              refreshRecipes={fetchSavedRecipes}
             />
           )}
-        </div>
+        </ul>
       </div>}
 
     </main>
