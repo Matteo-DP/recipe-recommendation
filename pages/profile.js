@@ -5,29 +5,6 @@ import getApiKey from '../src/services/apiKeyService';
 import RecipeSearchItem from '../src/components/RecipeSearchItem';
 import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton';
 
-const fetchSavedRecipes = (currentUser, setSavedRecipes, setError, setPopup, setLoading) => {
-    setError("")
-    setPopup("")
-    setLoading(true);
-    const apiKey = getApiKey();
-    fetch("/api/savedRecipes?" + new URLSearchParams({
-        uuid: currentUser.uid
-    }))
-        .then(res => res.json())
-        .then(data => {
-            if(data.code == 200 && data.recipeIds.length !==0) {
-                fetch("https://api.spoonacular.com/recipes/informationBulk?" + new URLSearchParams({
-                    ids: data.recipeIds,
-                    apiKey: apiKey
-                }))
-                    .then(res => res.json())
-                    .then(data => setSavedRecipes(data))
-                }
-            })
-    .finally(() => setLoading(false))
-    .catch(() => setError("Failed to retrieve saved recipes."))
-}
-
 
 export default function Profile() {
 
@@ -38,8 +15,29 @@ export default function Profile() {
     const [error, setError] = useState("");
 
     useEffect(() => {
-        fetchSavedRecipes(currentUser, setSavedRecipes, setError, setPopup, setLoading)
-    }, [currentUser])
+        setError("")
+        setPopup("")
+        setLoading(true);
+        const apiKey = getApiKey();
+        fetch("/api/savedRecipes?" + new URLSearchParams({
+            uuid: currentUser.uid
+        }))
+            .then(res => res.json())
+            .then(data => {
+                if(data.code == 200 && data.recipeIds.length !==0) {
+                    fetch("/api/getInfo?" + new URLSearchParams({
+                        ids: data.recipeIds,
+                    }))
+                        .then(res => res.json())
+                        .then(data => setSavedRecipes(data.data))
+                        .then(() => setLoading(false))
+                    }
+                })
+        .catch(() => {
+            setError("Failed to retrieve saved recipes.")
+            setLoading(false)
+        })
+    }, [currentUser.uid])
 
     const Skeleton = () => {
         let content = []
@@ -63,7 +61,7 @@ export default function Profile() {
                     </>
                 }
                 {loading && <Skeleton /> }
-                {!loading && savedRecipes.length == 0 &&
+                {!loading && savedRecipes.length == 0 && !error &&
                     <>
                         <p className='mt-4 text-red-600'>No recipes saved yet!</p>
                         <p>Save your first recipe by clicking the bookmark icon next to a search result</p>

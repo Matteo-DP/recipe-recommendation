@@ -34,56 +34,43 @@ export default function Index() {
     fetchSavedRecipes(currentUser, setSavedRecipes)
   }, [currentUser])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
 
     setLoading(true)
     setRecipes(undefined)
     setError("")
     const ingredients = searchRef.current.value.split(" ")
-    console.log(ingredients.toString())
 
-    const apiKey = getApiKey()
-    // https://spoonacular.com/food-api/docs#Search-Recipes-by-Ingredients
-    const url = 'https://api.spoonacular.com/recipes/findByIngredients?ingredients=' + ingredients.toString() + "&" + new URLSearchParams({
+    // Get recipes by search ingredients
+    const res = await fetch("/api/getRecipes?" + new URLSearchParams({
       ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
       number: 10,
       ranking: searchSettings?.ranking?.prioRanking1 && 1 || searchSettings?.ranking?.prioRanking2 && 2 || 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
-      apiKey: apiKey
-    })
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        if(data.length !== 0) {
-          setRecipes(data)
-          const ids = data.map((recipe) => recipe.id)
-          const getInfoUrl = "https://api.spoonacular.com/recipes/informationBulk?" + new URLSearchParams({
-            ids: ids,
-            apiKey: apiKey
-          })
-          // https://spoonacular.com/food-api/docs
-          fetch(getInfoUrl) // Get info for recipes
-            .then(res => res.json())
-            .then(data => {
-              if(data.length !== 0) {
-                setInfo(data)
-              } else {
-                setError("No recipes found. Have you correctly inputted your ingredients?")
-                setLoading(false)
-              }
-            })
-            .then(() => fetchSavedRecipes(currentUser, setSavedRecipes)
-                .then(() => setLoading(false))
-            )
-        } else {
-          setError("No recipes found. Have you correctly inputted your ingredients?")
-          setLoading(false)
-        }
-      })
-    .catch(() => {
-      setError("An error has occured while trying to search for recipes.")
+      ingredients: ingredients.toString(),
+    }))
+    const data = await res.json()
+    if(data.code !== 200) {
+      setError(data.message)
       setLoading(false)
-    })
+      return
+    }
+    setRecipes(data.data)
+
+    // Get recipes by id
+    const res2 = await fetch("/api/getInfo?" + new URLSearchParams({
+      ids: data.data.map((recipe) => recipe.id)
+    }))
+    const data2 = await res2.json()
+    if(data2.code !== 200) {
+      setError(data2.message)
+      setLoading(false)
+      return
+    }
+    setInfo(data2.data)
+
+    fetchSavedRecipes()
+    setLoading(false)
   }
 
   const Skeleton = () => {
