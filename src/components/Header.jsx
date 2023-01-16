@@ -15,14 +15,21 @@ export default function Header() {
                             Whats in your fridge?
                         </Link>
                     </li>
-                    <li className='inline hover:text-accent duration-75 ease-in'>
+                    <li className='mr-4 inline hover:text-accent duration-75 ease-in'>
                         <Link href="/">
                             Home
                         </Link>
                     </li>
+                    {currentUser && 
+                        <li className='inline hover:text-accent duration-75 ease-in'>
+                            <Link href="/profile">
+                                Saved
+                            </Link>
+                        </li>
+                    }
                 </div>
                 <li className="hover:text-accent duration-75 ease-in">
-                    {currentUser && <p className='mr-4 text-textlighter inline'>{currentUser.email}</p>}
+                    {currentUser && <p className='mr-4 text-textlighter hidden sm:inline'>{currentUser.email}</p>}
                     {currentUser ?
                         <Link href="/auth/logout">
                             Logout

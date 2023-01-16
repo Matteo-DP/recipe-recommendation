@@ -2,12 +2,12 @@ import React, { useState } from 'react'
 import Image from 'next/image'
 import styles from "../../styles/main.module.css"
 
-export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, refreshRecipes }) {
+export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, refreshRecipes, dontRefreshRecipes = false }) {
 
     const [loading, setLoading] = useState(false)
-    const [visuallySaved, setVisuallySaved] = useState(saved)
+    const [visuallySaved, setVisuallySaved] = useState(saved) // Actual saving to DB is still loading
 
-    const tags = {
+    const tags = { // Tags capitalization map
         dairyFree: "Dairy free",
         glutenFree: "Gluten free",
         ketogenic: "Ketogenic",
@@ -26,14 +26,14 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: new URLSearchParams({
                 uuid: uuid,
-                recipeId: recipe.id
+                recipeId: info.id
             })
         })
             .then(data => data.json())
             .then(res => {
                 if(res?.code == 200) {
-                    setPopup(`Recipe '${recipe.title}' ${saved ? "deleted" : "saved"}`)
-                    refreshRecipes()
+                    setPopup(`Recipe '${info.title}' ${saved ? "deleted" : "saved"}`)
+                    !dontRefreshRecipes && refreshRecipes()
                 } else {
                     setPopup(`Failed to ${saved ? "delete" : "save"} recipe`)
                 }
@@ -43,12 +43,10 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
  
     return (
         <li className='flex flex-col sm:flex-row gap-4 py-10'>
-            <Image alt={recipe.title} src={recipe.image} width={300} height={300} className="rounded-xl sm:rounded-l-xl sm:rounded-r-none object-cover mx-auto sm:m-0" />
+            <Image alt={info.title} src={info.image} width={300} height={300} className="rounded-xl sm:rounded-l-xl sm:rounded-r-none object-cover mx-auto sm:m-0" />
             <div className='flex flex-col justify-around'>
                 <div>
-                    <h1 className='text-xl sm:text-2xl font-medium mb-2'>{recipe.title}</h1>
-                    {/* If the spoonacular score exists, show it */}
-                    {info?.spoonacularScore && <p className='text-green-500 text-xl inline mr-4'>{info.spoonacularScore}/100</p>}
+                    <h1 className='text-xl sm:text-2xl font-medium mb-2'>{info.title}</h1>
                     {/* Map tags */}
                     <div className='flex flex-row justify-start flex-wrap gap-2 mb-2'>
                         {Object.keys(tags).map((key) =>
@@ -56,7 +54,7 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
                         )}
                     </div>
                     <div>
-                    {recipe.missedIngredientCount !== 0 ?
+                    {recipe?.missedIngredientCount && (recipe.missedIngredientCount !== 0 ?
                     <>
                         <p className='text-sm sm:text-base inline'>Missing ingredients:</p>
                         <p className='text-base sm:text-lg inline text-red-600 ml-2'>{
@@ -66,10 +64,20 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
                     </>
                     :
                         <p className='text-green-500'>All ingredients used</p>
-                    }
+                    )}
                     </div>
                 </div>
-                <div className='flex flex-row sm-flex-col gap-4'>
+                <div className='flex flex-row-reverse justify-end sm:justify-start sm:flex-col mt-6 flex-wrap'>
+                    <div>
+                        <div className='inline-block mr-4 mt-6'>
+                            <i className="fa-solid fa-dollar-sign text-yellow-400 sm:fa-xl"></i>
+                            {!info.cheap && <i className="fa-solid fa-dollar-sign text-yellow-400 sm:fa-xl"></i>}
+                        </div>
+                        <div className='mt-6 inline-block'>
+                            <i className="fa-regular fa-clock sm:fa-xl mr-2"></i>
+                            <p className='inline'>{info.readyInMinutes} mins</p>
+                        </div>
+                    </div>
                     <div className='mt-4 mb-2 sm:mb-0'>
                         <a className={`bg-accent text-white px-12 py-2 rounded-2xl hover:text-accent hover:bg-white ease-in-out duration-75 ${styles.innerShadow}`}
                             href={info?.sourceUrl || "/notfound"} target="_blank" rel="noreferrer"
@@ -80,22 +88,12 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
                         {uuid && 
                             <button onClick={() => handleSave()} disabled={loading} className="text-blue-700">
                                 {visuallySaved ?
-                                    <i class="fa-solid fa-bookmark fa-2xl ml-4"></i>
+                                    <i class="fa-solid fa-bookmark fa-2xl ml-4 mr-4"></i>
                                     :
-                                    <i class="fa-regular fa-bookmark fa-2xl ml-4"></i>
+                                    <i class="fa-regular fa-bookmark fa-2xl ml-4 mr-4"></i>
                                 }
                             </button>
                         }
-                    </div>
-                    <div>
-                        <div className='inline-block mr-4 mt-6'>
-                            <i className="fa-solid fa-dollar-sign text-yellow-400 sm:fa-xl"></i>
-                            {!info.cheap && <i className="fa-solid fa-dollar-sign text-yellow-400 sm:fa-xl"></i>}
-                        </div>
-                        <div className='mt-6 inline-block'>
-                            <i className="fa-regular fa-clock sm:fa-xl mr-2"></i>
-                            <p className='inline'>{info.readyInMinutes} mins</p>
-                        </div>
                     </div>
                 </div>
             </div>

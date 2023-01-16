@@ -91,13 +91,19 @@ export default async function RecipeHandler(req, res) {
 
         } catch(e) {
             console.error(e)
-            return res.status(500).end()
+            return res.status(500).json({
+                code: 500,
+                message: "Internal server error"
+            })
         } finally {
             if(connection) connection.end()
         }
 
     } else {
-        return res.status(405).end() // Method not allowed
+        return res.status(405).json({
+            code: 405,
+            message: "Method not allowed"
+        }) // Method not allowed
     }
 
 }

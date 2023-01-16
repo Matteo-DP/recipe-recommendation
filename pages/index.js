@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import RecipeSearchItem from '../src/components/RecipeSearchItem';
 import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton';
 import Image from 'next/image';
@@ -6,6 +6,15 @@ import styles from "../styles/main.module.css"
 import SettingsMenu from '../src/components/SettingsMenu';
 import getApiKey from '../src/services/apiKeyService';
 import { useAuth } from "../src/contexts/AuthContext"
+
+const fetchSavedRecipes = async (currentUser, setSavedRecipes) => {
+  if(!currentUser) return
+  fetch("/api/savedRecipes?" + new URLSearchParams({
+    uuid: currentUser.uid
+  }))
+    .then(res => res.json())
+    .then(data => data.code == 200 && setSavedRecipes(data.recipeIds))
+}
 
 export default function Index() {
 
@@ -21,14 +30,9 @@ export default function Index() {
 
   const { currentUser } = useAuth();
 
-  const fetchSavedRecipes = async () => {
-    if(!currentUser) return
-    fetch("/api/savedRecipes?" + new URLSearchParams({
-      uuid: currentUser.uid
-    }))
-      .then(res => res.json())
-      .then(data => data.code == 200 && setSavedRecipes(data.recipeIds))
-  }
+  useEffect(() => {
+    fetchSavedRecipes(currentUser, setSavedRecipes)
+  }, [currentUser])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -68,7 +72,7 @@ export default function Index() {
                 setLoading(false)
               }
             })
-            .then(() => fetchSavedRecipes()
+            .then(() => fetchSavedRecipes(currentUser, setSavedRecipes)
                 .then(() => setLoading(false))
             )
         } else {
@@ -104,7 +108,7 @@ export default function Index() {
       />
 
       <div className={`py-16 ${styles.parallax} h-[95vh] flex justify-center items-center px-2`}>
-        <div className='px-8 py-8 md:p-16 bg-white rounded-xl drop-shadow-md max-w-5xl w-full'>
+        <div className='px-2 py-4 sm:px-8 sm:py-8 md:p-16 bg-white rounded-xl drop-shadow-md max-w-5xl w-full'>
           {error && 
             <p className='px-4 py-2 absolute -top-10 left-0 bg-red-500 text-white rounded-xl'>{error}</p>
           }
@@ -155,7 +159,7 @@ export default function Index() {
               uuid={currentUser?.uid}
               setPopup={setPopup}
               saved={savedRecipes ? savedRecipes.find(e => e == recipe.id) ? true : false : false}
-              refreshRecipes={fetchSavedRecipes}
+              refreshRecipes={() => fetchSavedRecipes(currentUser, setSavedRecipes)}
             />
           )}
         </ul>

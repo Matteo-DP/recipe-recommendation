@@ -48,9 +48,9 @@ export default function Login() {
                         <Form.Control type="password" placeholder="Password" ref={passwordRef} required />
                     </Form.Group>
                     <div className='flex flex-row justify-around items-baseline'>
-                    <button disabled={loading} type="submit" className={`mt-6 bg-accent px-4 py-2 rounded-xl hover:text-accent text-white hover:bg-white duration-75 ${styles.innerShadow}`}>
-                        Login
-                    </button>
+                        <button disabled={loading} type="submit" className={`mt-6 bg-accent px-4 py-2 rounded-xl hover:text-accent text-white hover:bg-white duration-75 ${styles.innerShadow}`}>
+                            Login
+                        </button>
                         <p className='inline-block text-textlighter'>or</p>
                         <Link href="/auth/signup" className='inline-block text-lg text-accent underline hover:text-blue-400'>
                             create an account
