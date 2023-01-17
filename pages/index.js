@@ -29,6 +29,11 @@ export default function Index() {
 
   const { currentUser } = useAuth();
 
+  // Prevent no saved recipes for initial render
+  useEffect(() => {
+    fetchSavedRecipes(currentUser, setSavedRecipes)
+  }, [currentUser])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
