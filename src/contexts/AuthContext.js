@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react'
 import { auth } from '../services/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import PageLoader from '../components/PageLoader';
 
 // What is useContext?
 // Why do we return unsubscribe in useEffect?
@@ -46,7 +47,7 @@ export function AuthProvider({ children }) {
     return (
         <AuthContext.Provider value={value}>
             {loading ? 
-                <p className='text-3xl'>Loading ...</p>
+                <PageLoader />
             :
                 children
             }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
-import styles from "../../styles/main.module.css"
+import Button from './ButtonLarge'
 
 export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, refreshRecipes, dontRefreshRecipes = false }) {
 
@@ -79,12 +79,12 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
                         </div>
                     </div>
                     <div className='mt-4 mb-2 sm:mb-0'>
-                        <a className={`bg-accent text-white px-12 py-2 rounded-2xl hover:text-accent hover:bg-white ease-in-out duration-75 ${styles.innerShadow}`}
-                            href={info?.sourceUrl || "/notfound"} target="_blank" rel="noreferrer"
+                        <Button
+                            text={"View recipe"}
+                            href={info?.sourceUrl || "/notfound"}
                         >
-                            View recipe
-                            <i className="fa-solid fa-arrow-up-right-from-square ml-2 fa-sm"></i>
-                        </a>
+                            <i className="fa-solid fa-arrow-up-right-from-square ml-2 fa-sm"></i> 
+                        </Button>
                         {uuid && 
                             <button onClick={() => handleSave()} disabled={loading} className="text-blue-700">
                                 {visuallySaved ?

@@ -4,7 +4,6 @@ import RecipeSearchItemSkeleton from '../src/components/RecipeSearchItemSkeleton
 import Image from 'next/image';
 import styles from "../styles/main.module.css"
 import SettingsMenu from '../src/components/SettingsMenu';
-import getApiKey from '../src/services/apiKeyService';
 import { useAuth } from "../src/contexts/AuthContext"
 
 const fetchSavedRecipes = async (currentUser, setSavedRecipes) => {
@@ -29,10 +28,6 @@ export default function Index() {
   const [savedRecipes, setSavedRecipes] = useState(undefined)
 
   const { currentUser } = useAuth();
-
-  useEffect(() => {
-    fetchSavedRecipes(currentUser, setSavedRecipes)
-  }, [currentUser])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -69,7 +64,7 @@ export default function Index() {
     }
     setInfo(data2.data)
 
-    fetchSavedRecipes()
+    fetchSavedRecipes(currentUser, setSavedRecipes)
     setLoading(false)
   }
 

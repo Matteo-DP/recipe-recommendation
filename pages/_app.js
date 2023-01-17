@@ -5,6 +5,7 @@ import Footer from '../src/components/Footer'
 import Header from '../src/components/Header'
 import Head from 'next/head'
 import { AuthProvider } from '../src/contexts/AuthContext'
+import { Analytics } from '@vercel/analytics/react'
 
 function MyApp({ Component, pageProps }) {
   return( 
@@ -22,6 +23,7 @@ function MyApp({ Component, pageProps }) {
         <Component {...pageProps} />
         <Footer />
       </AuthProvider>
+      <Analytics />
     </>
   )
 }
