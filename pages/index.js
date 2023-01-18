@@ -206,7 +206,7 @@ export default function Index() {
       </div>
       
       {searchRef && searchRef.current &&
-        <div className='max-w-6xl mx-auto px-2'>
+        <div className='max-w-6xl mx-auto px-2 min-h-screen'>
           {searchRef?.current?.value &&
             <>
               <h1 ref={scrollToRef} className='text-base sm:text-xl mt-8 mb-4 text-center'>Search results for recipes that use &apos;{searchRef.current.value}&apos;</h1>
