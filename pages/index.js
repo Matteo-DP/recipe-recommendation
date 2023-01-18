@@ -26,13 +26,25 @@ export default function Index() {
   const [info, setInfo] = useState(undefined)
   const [isOpen, setIsOpen] = useState(false)
   const [savedRecipes, setSavedRecipes] = useState(undefined)
+  const scrollToRef = useRef(null)
 
   const { currentUser } = useAuth();
 
-  // Prevent no saved recipes for initial render
+  // Prevent no saved recipes for initial search
   useEffect(() => {
     fetchSavedRecipes(currentUser, setSavedRecipes)
   }, [currentUser])
+
+  // Scroll to search items when searching
+  useEffect(() => {
+    if(loading && scrollToRef && scrollToRef.current) {
+      const { offsetTop } = scrollToRef.current
+      scrollTo({
+        top: offsetTop - 100,
+        behavior: "smooth"  
+      })
+    }
+  }, [loading])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -41,7 +53,7 @@ export default function Index() {
     setRecipes(undefined)
     setError("")
     const ingredients = searchRef.current.value.split(" ")
-
+    
     // Get recipes by search ingredients
     const res = await fetch("/api/getRecipes?" + new URLSearchParams({
       ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
@@ -126,7 +138,7 @@ export default function Index() {
       {loading ?
 
       <div className='max-w-6xl mx-auto'>
-        <h1 className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
+        <h1 ref={scrollToRef} className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
         <div className='flex flex-col divide-y-2'>
           <Skeleton />
         </div>
