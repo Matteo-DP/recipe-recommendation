@@ -17,6 +17,7 @@ const fetchSavedRecipes = async (currentUser, setSavedRecipes) => {
 
 export default function Index() {
 
+  const [title, setTitle] = useState("");
   const [popup, setPopup] = useState("");
   const [searchSettings, setSearchSettings] = useState(undefined)
   const searchRef = useRef(undefined)
@@ -27,6 +28,11 @@ export default function Index() {
   const [isOpen, setIsOpen] = useState(false)
   const [savedRecipes, setSavedRecipes] = useState(undefined)
   const scrollToRef = useRef(null)
+  const [useOtherRecipes, setuseOtherRecipes] = useState(false) // Set to true when AI generated title isn't found, get spoonacular recipes by ingredients instead
+  const [useMoreRecipes, setUseMoreRecipes] = useState(false) // When the search result is limited
+  const [moreRecipes, setMoreRecipes] = useState(undefined)
+  const [moreRecipesInfo, setMoreRecipesInfo] = useState(undefined)
+  const [moreRecipesLoading, setMoreRecipesLoading] = useState(false)
 
   const { currentUser } = useAuth();
 
@@ -51,27 +57,59 @@ export default function Index() {
 
     setLoading(true)
     setRecipes(undefined)
+    setInfo(undefined)
+    setuseOtherRecipes(false)
     setError("")
+    setTitle("")
+    setUseMoreRecipes(false)
+    setMoreRecipes(undefined)
+    setMoreRecipesInfo(undefined)
     const ingredients = searchRef.current.value.split(" ")
-    
-    // Get recipes by search ingredients
-    const res = await fetch("/api/getRecipes?" + new URLSearchParams({
-      ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
-      number: 10,
-      ranking: searchSettings?.ranking?.prioRanking1 && 1 || searchSettings?.ranking?.prioRanking2 && 2 || 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
-      ingredients: ingredients.toString(),
+
+    // Get recipe title from OpenAI
+    const resTitle = await fetch("/api/generateTitle?" + new URLSearchParams({
+      ingredients: ingredients
     }))
-    const data = await res.json()
-    if(data.code !== 200) {
-      setError(data.message)
+    const dataTitle = await resTitle.json()
+    if(dataTitle.code !== 200) {
+      setError(dataTitle.message)
       setLoading(false)
       return
     }
-    setRecipes(data.data)
+    setTitle(dataTitle.title)
 
-    // Get recipes by id
+    // Search recipe by title
+    const resRecipe = await fetch("/api/searchRecipe?" + new URLSearchParams({
+      query: dataTitle.title
+    }))
+    var dataRecipe = await resRecipe.json()
+    if(dataRecipe.code !== 200) {
+      if(dataRecipe.code == 404) {
+        // Get recipes by ingredients instead
+        setuseOtherRecipes(true)
+        // Get recipes by search ingredients
+        const resOther = await fetch("/api/getRecipes?" + new URLSearchParams({
+          ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
+          number: 10,
+          ranking: searchSettings?.ranking?.prioRanking1 && 1 || searchSettings?.ranking?.prioRanking2 && 2 || 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
+          ingredients: ingredients.toString(),
+        }))
+        dataRecipe = await resOther.json()
+        if(dataRecipe.code !== 200) {
+          setError("Couldn't find recipes")
+          setLoading(false)
+          return
+        }
+      } else {
+        setError(dataRecipe.message)
+        setLoading(false)
+      }
+    }
+    setRecipes(dataRecipe.data?.results || dataRecipe.data)
+
+    // Get info by id
     const res2 = await fetch("/api/getInfo?" + new URLSearchParams({
-      ids: data.data.map((recipe) => recipe.id)
+      ids: dataRecipe.data?.results?.map((recipe) => recipe.id) || dataRecipe.data.map((recipe) => recipe.id)
     }))
     const data2 = await res2.json()
     if(data2.code !== 200) {
@@ -83,12 +121,44 @@ export default function Index() {
 
     fetchSavedRecipes(currentUser, setSavedRecipes)
     setLoading(false)
+
+    if(dataRecipe.data?.results?.length < 5 || dataRecipe.data.length < 5) {
+      setUseMoreRecipes(true)
+      setMoreRecipesLoading(true)
+      // Get recipes by search ingredients
+      const resMore = await fetch("/api/getRecipes?" + new URLSearchParams({
+        ignorePantry: searchSettings?.ignorePantry === undefined && true || searchSettings.ignorePantry,
+        number: 9,
+        ranking: searchSettings?.ranking?.prioRanking1 && 1 || searchSettings?.ranking?.prioRanking2 && 2 || 1, // Whether to maximize used ingredients (1) or minimize missing ingredients (2) first.
+        ingredients: ingredients.toString(),
+      }))
+      const dataMore = await resMore.json()
+      if(dataMore.code !== 200) {
+        setError("Couldn't find more recipes")
+        setMoreRecipesLoading(false)
+        return
+      }
+      setMoreRecipes(dataMore.data)
+      // Get info by id
+      const resMoreInfo = await fetch("/api/getInfo?" + new URLSearchParams({
+        ids: dataMore.data.map((recipe) => recipe.id)
+      }))
+      const dataMoreInfo = await resMoreInfo.json()
+      if(dataMoreInfo.code !== 200) {
+        setError(dataMoreInfo.messsage)
+        setLoading(false)
+        return
+      }
+      setMoreRecipesInfo(dataMoreInfo.data)
+      fetchSavedRecipes(currentUser, setSavedRecipes)
+      setMoreRecipesLoading(false)
+    }
   }
 
-  const Skeleton = () => {
+  const Skeleton = ({ n }) => {
     let content = []
     let i = 0
-    while(i<10) {
+    while(i<n) {
       content.push(<RecipeSearchItemSkeleton key={i} />)
       i += 1
     }
@@ -134,35 +204,85 @@ export default function Index() {
           />
         </div>
       </div>
-
-      {loading ?
-
-      <div className='max-w-6xl mx-auto'>
-        <h1 ref={scrollToRef} className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
-        <div className='flex flex-col divide-y-2'>
-          <Skeleton />
+      
+      {searchRef && searchRef.current &&
+        <div className='max-w-6xl mx-auto px-2'>
+          {searchRef?.current?.value &&
+            <>
+              <h1 ref={scrollToRef} className='text-base sm:text-xl mt-8 mb-4 text-center'>Search results for recipes that use &apos;{searchRef.current.value}&apos;</h1>
+              {title ?
+                <>
+                  <p className='text-xl mt-4 text-textlight'>Recommended dish:</p>
+                  <p className='text-2xl mt-2'>{title}</p>
+                  {loading &&
+                    <p className='text-base mt-2'>
+                      Searching the web for recipes ...
+                    </p>
+                  }
+                </>
+                :
+                <p className='text-2xl mt-4'>Asking AI for a dish ...</p>
+              }
+              {recipes && info && !loading &&
+                useOtherRecipes &&
+                  <h1 className='text-base text-textlighter mt-2'>Sorry, we couldn&apos;t find that recipe. Here are some other recipes we found:</h1>
+              }
+              {!loading && (!recipes || !info) &&
+                <h1 className='text-base text-textlight mt-2 text-red-800'>Sorry, we didn&apos;t find any recipes for this dish, but you can always look it up on Google!</h1>
+              }
+            </>
+          } 
+          <div className='flex flex-col divide-y-2'>
+            {loading ?
+              <Skeleton 
+                n={10}
+              />
+            :
+              recipes && info &&
+                recipes.map((recipe) =>
+                  <RecipeSearchItem
+                    key={recipe.id}
+                    recipe={recipe}
+                    info={info.find((e) => e.id == recipe.id)}
+                    uuid={currentUser?.uid}
+                    setPopup={setPopup}
+                    saved={savedRecipes ? savedRecipes.find(e => e == recipe.id) ? true : false : false}
+                    refresRecipes={() => fetchSavedRecipes(currentUser, setSavedRecipes)}
+                  />
+            )}
+          </div>
+          {useMoreRecipes &&
+              moreRecipesLoading ?
+                <>
+                  <p className='text-base mt-2 text-xl'>
+                    Searching the web for more recipes ...
+                  </p>
+                  <Skeleton 
+                    n={9}
+                  />
+                </>
+              :
+                <>
+                  <h1 className='text-textbase mt-2 text-xl'>Here are some more recipes we found on the web:</h1>
+                  <div className='flex flex-col divide-y-2'>
+                    {moreRecipes && moreRecipesInfo &&
+                      moreRecipes.map((recipe) =>
+                        <RecipeSearchItem
+                        key={recipe.id}
+                        recipe={recipe}
+                        info={moreRecipesInfo.find((e) => e.id == recipe.id)}
+                        uuid={currentUser?.uid}
+                        setPopup={setPopup}
+                        saved={savedRecipes ? savedRecipes.find(e => e == recipe.id) ? true : false : false}
+                        refresRecipes={() => fetchSavedRecipes(currentUser, setSavedRecipes)}
+                      />
+                      )
+                    }
+                  </div>
+                </>
+          }
         </div>
-      </div>
-
-      :
-
-      recipes && info &&
-      <div className='max-w-6xl mx-auto p-2'>
-        <h1 className='text-2xl mt-8 mb-4'>Recommended recipes that use &quot;{searchRef.current.value}&quot;</h1>
-        <ul className='flex flex-col divide-y-2'>
-          {recipes.map((recipe) =>
-            <RecipeSearchItem
-              key={recipe.id}
-              recipe={recipe}
-              info={info.find((e) => e.id == recipe.id)}
-              uuid={currentUser?.uid}
-              setPopup={setPopup}
-              saved={savedRecipes ? savedRecipes.find(e => e == recipe.id) ? true : false : false}
-              refreshRecipes={() => fetchSavedRecipes(currentUser, setSavedRecipes)}
-            />
-          )}
-        </ul>
-      </div>}
+      }
 
     </main>
   )

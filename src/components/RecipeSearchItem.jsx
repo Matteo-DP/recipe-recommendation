@@ -33,7 +33,7 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
             .then(res => {
                 if(res?.code == 200) {
                     setPopup(`Recipe '${info.title}' ${saved ? "deleted" : "saved"}`)
-                    !dontRefreshRecipes && refreshRecipes()
+                    !dontRefreshRecipes && refreshRecipes
                 } else {
                     setPopup(`Failed to ${saved ? "delete" : "save"} recipe`)
                 }

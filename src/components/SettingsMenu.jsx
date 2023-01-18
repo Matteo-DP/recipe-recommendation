@@ -55,9 +55,7 @@ export default function SettingsMenu({ isOpen, setIsOpen, setSearchSettings }) {
             <input className='mr-2' defaultChecked={check(settings?.ranking.prioRanking1, true)} type="radio" id="ranking1" value="ranking1" ref={prioRanking1Ref} name="ranking" />
             <label htmlFor="ranking1">Maximize used ingredients first</label> <br />
             <input className='mr-2' defaultChecked={check(settings?.ranking.prioRanking2, false)} type="radio" id="ranking2" value="ranking2" ref={prioRanking2Ref} name="ranking" />
-            <label htmlFor="ranking2">Minimize missing ingredients first 
-                <strong className='font-normal text-textlighter'> (may be useful when accounting for pantry items)</strong>
-            </label> <br />
+            <label htmlFor="ranking2">Minimize missing ingredients first</label> <br />
 
             <p className='text-lg mt-4 mb-1 text-textlighter'>Pantry items</p>
             <input className='mr-2' defaultChecked={check(settings?.ignorePantry, true)} type="checkbox" id="ignorePantry" value="ignorePantry" ref={ignorePantryRef} name="pantry" />
