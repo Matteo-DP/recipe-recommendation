@@ -14,7 +14,7 @@ export default function RecipeSearchItem({ recipe, info, uuid, setPopup, saved, 
         sustainable: "Sustainable",
         vegan: "Vegan",
         vegetarian: "Vegetarian",
-        veryHealthy: "Heatlhy"
+        veryHealthy: "Healthy"
     };
 
     const handleSave = () => {
