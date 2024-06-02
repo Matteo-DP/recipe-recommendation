@@ -30,7 +30,7 @@ export default function Index() {
   const scrollToRef = useRef(null)
   const [useOtherRecipes, setuseOtherRecipes] = useState(false) // Set to true when AI generated title isn't found, get spoonacular recipes by ingredients instead
   const [useMoreRecipes, setUseMoreRecipes] = useState(false) // When the search result is limited
-  const [moreRecipes, setMoreRecipes] = useState(undefined)
+  const [moreRecipes, setMoreRecipes] = useState(null)
   const [moreRecipesInfo, setMoreRecipesInfo] = useState(undefined)
   const [moreRecipesLoading, setMoreRecipesLoading] = useState(false)
 
@@ -52,9 +52,10 @@ export default function Index() {
     }
   }, [loading])
 
+  const deprecatedPlaceholder = "Sorry, this feature is no longer available due to OpenAI free trial ending. :("
   const handleSubmit = async (e) => {
     e.preventDefault()
-
+    
     setLoading(true)
     setRecipes(undefined)
     setInfo(undefined)
@@ -67,22 +68,30 @@ export default function Index() {
     const ingredients = searchRef.current.value.split(" ")
 
     // Get recipe title from OpenAI
+    // DEPRECATED -- OPENAI FREE TRIAL EXPIRED
     const resTitle = await fetch("/api/generateTitle?" + new URLSearchParams({
       ingredients: ingredients
     }))
     const dataTitle = await resTitle.json()
-    if(dataTitle.code !== 200) {
+    if(dataTitle.code == 429) {
+      setError("OpenAI free trial expired, no more AI generated recipes :(")
+      setLoading(false)
+    } else if(dataTitle.code !== 200) {
       setError(dataTitle.message)
       setLoading(false)
-      return
     }
-    setTitle(dataTitle.title)
+    setTitle(dataTitle.title || deprecatedPlaceholder)
 
     // Search recipe by title
-    const resRecipe = await fetch("/api/searchRecipe?" + new URLSearchParams({
-      query: dataTitle.title
-    }))
-    var dataRecipe = await resRecipe.json()
+    if(dataTitle.title !== "placeholder") {
+      const resRecipe = await fetch("/api/searchRecipe?" + new URLSearchParams({
+        query: dataTitle.title
+      }))
+      var dataRecipe = await resRecipe.json()
+    } else {
+      dataRecipe = {}
+      dataRecipe.code = 404
+    }
     if(dataRecipe.code !== 200) {
       if(dataRecipe.code == 404) {
         // Get recipes by ingredients instead
@@ -224,11 +233,14 @@ export default function Index() {
                 <p className='text-2xl mt-4'>Asking AI for a dish ...</p>
               }
               {recipes && info && !loading &&
-                useOtherRecipes &&
+                useOtherRecipes && title !== deprecatedPlaceholder &&
                   <h1 className='text-base text-textlighter mt-2'>Sorry, we couldn&apos;t find that recipe. Here are some other recipes we found:</h1>
               }
-              {!loading && (!recipes || !info) &&
+              {!loading && (!recipes || !info) && title !== deprecatedPlaceholder &&
                 <h1 className='text-base text-textlight mt-2 text-red-800'>Sorry, we didn&apos;t find any recipes for this dish, but you can always look it up on Google!</h1>
+              }
+              {title === deprecatedPlaceholder &&
+                <h1 className="mt-2">Still, here are some recipes we found without AI:</h1>
               }
             </>
           } 
@@ -252,7 +264,7 @@ export default function Index() {
             )}
           </div>
           {useMoreRecipes &&
-              moreRecipesLoading ?
+              (moreRecipesLoading ?
                 <>
                   <p className='text-base mt-2 text-xl'>
                     Searching the web for more recipes ...
@@ -280,6 +292,7 @@ export default function Index() {
                     }
                   </div>
                 </>
+              )
           }
         </div>
       }

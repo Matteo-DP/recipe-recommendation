@@ -23,6 +23,7 @@ export default async function GetRecipes(req, res) {
               })
             const response = await fetch(url)
             const data = await response.json()
+            console.log(data)
             if(data.length == 0) return res.status(404).json({ 
                 code: 404, 
                 message: "No recipes found. Have you correctly inputted your ingredients?" 

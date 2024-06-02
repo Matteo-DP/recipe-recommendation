@@ -20,7 +20,7 @@ export default async function generateTitle(req, res) {
             })
             const openai = new OpenAIApi(configuration)
             const response = await openai.createCompletion({
-                model: "text-davinci-003",
+                model: "gpt-3.5-turbo",
                 prompt: 
                     `Name a tasty, simple and cheap dish a college student could make with the ingredients. \n
                     Ingredients: ${ingredients.toString()} \n
@@ -38,7 +38,13 @@ export default async function generateTitle(req, res) {
         }
 
     } catch(e) {
-        console.error(e)
+        if(e.response.data.error.code === "insufficient_quota") {
+            console.log("code 429")
+            return res.status(429).json({
+                code: 429,
+                message: "Rate limit exceeded. Please try again later."
+            })
+        }
         return res.status(500).json({
             code: 500,
             message: "An error has occured while trying to generate titles."
