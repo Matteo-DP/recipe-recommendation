@@ -9,11 +9,11 @@ async function sqlCreateConnection() {
         password: process.env.MYSQL_PASSWORD,
         database: process.env.MYSQL_DATABASE,
         ssl: { // Required for PlanetScale
-          rejectUnauthorized: true
+          rejectUnauthorized: false
         }
       })
 }
-
+// rejectUnauthorized: false is use dto bypass self signed certificate error
 
 export default async function RecipeHandler(req, res) {
 
